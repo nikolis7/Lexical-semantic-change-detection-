@@ -15,7 +15,6 @@ nltk.download('punkt')
 nltk.download('punkt_tab')
 nltk.download('stopwords')
 import multiprocessing
-import gensim.downloader as api
 import csv
 from collections import defaultdict
 from collections import Counter
@@ -76,22 +75,30 @@ doc2 = datasets.__getitem__(p2).split('\n')
 
 
 # remove stopwords and punctuation 
+from nltk.corpus import stopwords
+from string import punctuation
+from nltk.tokenize import word_tokenize
 
+# Ensure you download NLTK resources
+nltk.download('punkt')
+nltk.download('stopwords')
+
+stop_words = set(stopwords.words('english'))
+
+# Function to remove stopwords and punctuation
 def remove_stopwords_and_punctuation(corpus):
     cleaned_corpus = []
     for sentence in corpus:
-        tokens = word_tokenize(sentence.lower())  # Tokenize and convert to lowercase
-        cleaned_sentence = [word for word in tokens if word not in stop_words and word not in punctuation]
-        cleaned_corpus.append(' '.join(cleaned_sentence))
+        tokens = word_tokenize(sentence)
+        cleaned_sentence = [
+            word for word in tokens if word.lower() not in stop_words and word not in punctuation
+        ]
+        cleaned_corpus.append(" ".join(cleaned_sentence))
     return cleaned_corpus
 
-# Apply stopword and punctuation removal
+# Apply the function to your corpus
 cleaned_doc1 = remove_stopwords_and_punctuation(doc1)
-cleaned_doc2 = remove_stopwords_and_punctuation(doc2)
-
-
-
-
+cleaned_doc2 = remove_stopwords_and_punctuation(doc1)
 
 
 
@@ -303,38 +310,42 @@ print("Top 10 trigrams in Corpus 2:", trigrams_corpus2.most_common(10))
 # 5. Part-of-Speech (POS) Tagging
 # Analyze the distribution of POS tags in each corpus to see if there are shifts in the types of words used (e.g., more nouns, fewer verbs).
 
+import nltk
+from collections import Counter
 
-# Download necessary resources for NLTK
+# Ensure NLTK data path is correct and resources are downloaded
 nltk.data.path.append('C:/Users/Tsaro/anaconda3/envs/sgns_pipeline/nltk_data')
-nltk.download('averaged_perceptron_tagger')
-nltk.download('punkt')  # Ensure 'punkt' is also downloaded for tokenization
-
+nltk.download('averaged_perceptron_tagger', download_dir='C:/Users/Tsaro/anaconda3/envs/sgns_pipeline/nltk_data')
+nltk.download('punkt', download_dir='C:/Users/Tsaro/anaconda3/envs/sgns_pipeline/nltk_data')
 
 # Function to tokenize and get POS distribution using nltk
 def pos_distribution_nltk(corpus):
     pos_counts = Counter()
     for sentence in corpus:
-        # Tokenize the sentence
-        tokens = nltk.word_tokenize(sentence)
-        # Get POS tags
-        pos_tags = nltk.pos_tag(tokens)
-        # Extract POS tags and update counts
-        pos_counts.update([tag for word, tag in pos_tags])
+        try:
+            # Tokenize the sentence
+            tokens = nltk.word_tokenize(sentence)
+            # Get POS tags
+            pos_tags = nltk.pos_tag(tokens)
+            # Extract POS tags and update counts
+            pos_counts.update([tag for word, tag in pos_tags])
+        except Exception as e:
+            print(f"Error processing sentence: {sentence}\nError: {e}")
     return pos_counts
 
-# POS distribution for both corpora (assuming doc1 and doc2 are defined)
-pos_corpus1 = pos_distribution_nltk(doc1)
-pos_corpus2 = pos_distribution_nltk(doc2)
+# Sample check to ensure corpus is not empty
+if 'doc1' in locals() and 'doc2' in locals():
+    print("Starting POS tagging...")
 
-print("POS distribution in Corpus 1:", pos_corpus1)
-print("POS distribution in Corpus 2:", pos_corpus2)
+    # POS distribution for both corpora
+    pos_corpus1 = pos_distribution_nltk(doc1)
+    pos_corpus2 = pos_distribution_nltk(doc2)
 
-
-
-
-
-
-
+    # Display results
+    print("POS distribution in Corpus 1:", pos_corpus1.most_common(10))
+    print("POS distribution in Corpus 2:", pos_corpus2.most_common(10))
+else:
+    print("doc1 or doc2 is not loaded. Please load your corpora properly.")
 
 
 
@@ -369,14 +380,14 @@ print("POS distribution in Corpus 2:", pos_corpus2)
 
 # 7. TF-IDF Analysis
 # Use TF-IDF (Term Frequency-Inverse Document Frequency) to identify distinctive words for each corpus.
-
+import sklearn
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 # Create a TF-IDF vectorizer
 tfidf_vectorizer = TfidfVectorizer(max_features=50)
 
 # Combine corpora into one and label them
-corpus_combined = doc1 + doc2
+corpus_combined = cleaned_doc1 + cleaned_doc2
 
 # Fit the vectorizer and transform the corpus
 tfidf_matrix = tfidf_vectorizer.fit_transform(corpus_combined)
@@ -384,8 +395,6 @@ tfidf_matrix = tfidf_vectorizer.fit_transform(corpus_combined)
 # Get the top TF-IDF words in each corpus
 tfidf_words = tfidf_vectorizer.get_feature_names_out()
 print("Top TF-IDF words:", tfidf_words)
-
-
 
 
 
